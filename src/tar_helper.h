@@ -32,13 +32,13 @@ typedef struct tar_header
   char typeflag;                /* 156 */
   char linkname[100];           /* 157 */
   char magic[6];                /* 257 */
-  char version[2];              /* 263 */
+  char version[3];              /* 263 */
   char uname[32];               /* 265 */
   char gname[32];               /* 297 */
   char devmajor[8];             /* 329 */
   char devminor[8];             /* 337 */
   char prefix[155];             /* 345 */
-  /* 500 */
+  char padding[12];             /* 500 */
 } tar_h;
 
 #define TMAGIC   "ustar"        /* ustar and a null */
@@ -76,11 +76,23 @@ typedef struct tar_header
 #define TOWRITE  00002          /* write by other */
 #define TOEXEC   00001          /* execute/search by other */
 
+#define ALLPERM  "0007777"
+
+
+#define BASIC_UID "0000000"
+#define BASIC_GID "0000000"
+
+#define END_FILE_BLOCK_SIZE 512
+#define NUMBER_END_BLOCKS 2
+#define NUMBER_END_BYTES END_FILE_BLOCK_SIZE * NUMBER_END_BLOCKS
+
+#define ARCHIVE_NAME "archive.tar"
+
 unsigned int calculate_checksum(tar_h* input);
-void make_tar(tar_h* header, char* content, size_t content_size, char* end_bytes_buffer, size_t end_size, int checksum);
-void make_tar_empty(tar_h* header, int checksum);
-void update_header_field(char* header_field_to_change, char* new_header_value, size_t size);
-void initialize_header(tar_h* header);
 void define_content_size(tar_h* header, int content_size);
+void initialize_header(tar_h* header);
+void make_tar_empty(tar_h* header, int checksum);
+void make_tar(tar_h* header, char* content, size_t content_size, char* end_bytes_buffer, size_t end_size, int checksum);
+void update_header_field(char* header_field_to_change, char* new_header_value, size_t size);
 
 #endif //FUZZER__TAR_HELPER_H_
