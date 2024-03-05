@@ -6,7 +6,26 @@
 /*
  * Initialization of variables that will be used after
  * */
-
+/***
+ *
+char name[100];
+char mode[8];      OK
+char uid[8];
+char gid[8];
+char size[12];      OK
+char mtime[12];
+char chksum[8];
+char typeflag;
+char linkname[100];
+char magic[6];
+char version[3];
+char uname[32];
+char gname[32];
+char devmajor[8];
+char devminor[8];
+char prefix[155];
+char padding[12];
+ */
 static tar_h header; // header of the tar file to be created
 
 static int ctr_test = 0;
@@ -298,6 +317,28 @@ void test_size(char* extractor_path) {
     test_extraction(extractor_path);
   }
 }
+void test_typeflag(char* extractor_path) {
+
+  printf("\nFUZZING ON FLAGTYPE FIELD\n");
+
+  initialize_header(&header);
+  // Test with different sizes
+
+  // Test for non-ASCII characters
+  for(int i = 0; i < 4; i++)
+  {
+    header.typeflag = NOT_ASCII_CHARS[i];
+    make_tar_empty(&header, 1);
+    test_extraction(extractor_path);
+  }
+  for (int i = 0; i < 256; i++)
+  {
+    char char_typeflag = (char) i;
+    header.typeflag = char_typeflag;
+    make_tar_empty(&header, 1);
+    test_extraction(extractor_path);
+  }
+}
 void clean() {
   system("rm -f *.txt");
   system("rm -f " ARCHIVE_NAME);
@@ -312,6 +353,7 @@ void fuzz(char *path_of_extractor){
   test_mode(path_of_extractor);
   test_ending_bytes(path_of_extractor);
   test_size(path_of_extractor);
+  test_typeflag(path_of_extractor);
 
   printf("Number of tests completed: %d\n", ctr_test);
   printf("Number of crashes found: %d\n", ctr_success);
