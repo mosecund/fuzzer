@@ -10,15 +10,15 @@
  *
 char name[100];
 char mode[8];      OK
-char uid[8];
-char gid[8];
+char uid[8];    OK
+char gid[8];    OK
 char size[12];      OK
 char mtime[12];
 char chksum[8];
-char typeflag;
+char typeflag;  OK
 char linkname[100];
-char magic[6];
-char version[3];
+char magic[6]; OK
+char version[3]; OK
 char uname[32];
 char gname[32];
 char devmajor[8];
@@ -249,26 +249,6 @@ void basic_test(char* extractor_path, char* field_name, int size, int checksum) 
   test_extraction(extractor_path);
 
 }
-//void iterate_over_all_modes(){
-//  char modes[8];
-//  size_t size_modes = 8;
-//  for (int i = 0; i < 12; i++)
-//  {
-//    initialize_header(&header);
-//    snprintf(modes, 8, "%07o", MODES[i]);//TODO voir ce que signifie le 07o
-//    update_header_field(header.mode, modes,size_modes);
-//    make_tar_empty(&header, 1);
-//    test_extraction(extractorPath);
-//  }
-//}
-//void test_mode(char* extractor_path) {
-//  printf("\nFUZZING ON MODE\n");
-//
-//  // Test with different sizes
-//  basic_test(extractor_path, header.mode, modes_size, 1);
-//  iterate_over_all_modes();
-//
-//}
 void test_mode(char* extractor_path) {
 
   printf("\nFUZZING ON MODE FIELD\n");
@@ -277,6 +257,8 @@ void test_mode(char* extractor_path) {
   char test_mode[8];
 
   // We can test every possible mode in the range of known modes
+  //TODO make a seperate method for the iteration
+
   for (int i = 0; i < 12; i++)
   {
     initialize_header(&header);
@@ -310,6 +292,8 @@ void test_size(char* extractor_path) {
 
 
   // Loop on all header content size
+  //TODO make a seperate method for the iteration
+
   for (int i = 0; i < 7; i++)
   {
     define_content_size(&header, content_sizes[i]);
@@ -325,12 +309,16 @@ void test_typeflag(char* extractor_path) {
   // Test with different sizes
 
   // Test for non-ASCII characters
+  //TODO make a seperate method for the iteration
+
   for(int i = 0; i < 4; i++)
   {
     header.typeflag = NOT_ASCII_CHARS[i];
     make_tar_empty(&header, 1);
     test_extraction(extractor_path);
   }
+  //TODO make a seperate method for the iteration
+
   for (int i = 0; i < 256; i++)
   {
     char char_typeflag = (char) i;
@@ -338,6 +326,41 @@ void test_typeflag(char* extractor_path) {
     make_tar_empty(&header, 1);
     test_extraction(extractor_path);
   }
+}
+void test_version(char *path_of_extractor){
+    printf("\nFUZZING ON VERSION FIELD\n");
+    basic_test(path_of_extractor, header.version, 2, 1);
+    char version []= TVERSION;
+  initialize_header(&header);
+// iterate over all possible values
+
+//TODO make a seperate method for the iteration
+    for (int i = 0; i < 64; i++)
+    {
+      version[0] = i / 8 + '0';
+      version[1] =  i % 8 + '0';
+
+      update_header_field(header.version, version, 2);
+      make_tar_empty(&header, 1);
+      test_extraction(path_of_extractor);
+    }
+
+
+}
+void test_magic(char* extractor_path) {
+
+  printf("\nFUZZING ON MAGIC FIELD\n");
+  basic_test(extractor_path, header.magic, 6, 1);
+}
+void test_uid(char* extractor_path) {
+
+  printf("\nFUZZING ON UID FIELD\n");
+  basic_test(extractor_path, header.uid, 8, 1);
+}
+void test_gid(char* extractor_path) {
+
+  printf("\nFUZZING ON GID FIELD\n");
+  basic_test(extractor_path, header.gid, 8, 1);
 }
 void clean() {
   system("rm -f *.txt");
@@ -354,7 +377,10 @@ void fuzz(char *path_of_extractor){
   test_ending_bytes(path_of_extractor);
   test_size(path_of_extractor);
   test_typeflag(path_of_extractor);
-
+  test_version(path_of_extractor);
+  test_magic(path_of_extractor);
+  test_uid(path_of_extractor);
+    test_gid(path_of_extractor);
   printf("Number of tests completed: %d\n", ctr_test);
   printf("Number of crashes found: %d\n", ctr_success);
 //  system("ls -all *.txt");
