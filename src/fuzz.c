@@ -9,22 +9,22 @@
 /***
  *
 char name[100];
-char mode[8];      OK
-char uid[8];    OK
-char gid[8];    OK
+char mode[8];       OK
+char uid[8];        OK
+char gid[8];        OK
 char size[12];      OK
-char mtime[12];
-char chksum[8];
-char typeflag;  OK
-char linkname[100];
-char magic[6]; OK
-char version[3]; OK
-char uname[32];
-char gname[32];
-char devmajor[8];
-char devminor[8];
-char prefix[155];
-char padding[12];
+char mtime[12];     OK
+char chksum[8];     OK
+char typeflag;      OK
+char linkname[100]; OK
+char magic[6];      OK
+char version[3];    OK
+char uname[32];     OK
+char gname[32];     OK
+char devmajor[8];   ??
+char devminor[8];   ??
+char prefix[155];   ??
+char padding[12];   ??
  */
 static tar_h header; // header of the tar file to be created
 
@@ -362,6 +362,156 @@ void test_gid(char* extractor_path) {
   printf("\nFUZZING ON GID FIELD\n");
   basic_test(extractor_path, header.gid, 8, 1);
 }
+void test_uname(char* extractor_path) {
+  //  Basic case
+  char* field_name = header.uname;
+  printf("\nFUZZING ON UNAME FIELD\n");
+  basic_test(extractor_path, field_name, 8, 1);
+}
+void test_gname(char* extractor_path) {
+  //  Basic case
+  char* field_name = header.gname;
+  printf("\nFUZZING ON GNAME FIELD\n");
+  basic_test(extractor_path, field_name, 8, 1);
+}
+void test_linkname(char* extractor_path, int linkname) {
+    printf("\nFUZZING ON LINKNAME FIELD\n");
+    basic_test(extractor_path, header.linkname, 100, 1);
+  // Doing basic test on name field might result in trash data so we must design
+  // specific test cases for it
+}
+void test_chksum(char* extractor_path) {
+
+  printf("\nFUZZING ON CHKSUM FIELD\n");
+  basic_test(extractor_path, header.chksum, 8, 0);
+}
+void mtime_test(char* extractor_path) {
+
+  printf("\nFUZZING ON MTIME FIELD\n");
+  basic_test(extractor_path, header.mtime, 12, 1);
+
+  // Try different dates (far past, past, current, future, far future)
+  char* field_name = header.mtime;
+
+  char test_time[12];
+
+  // Reset header
+  initialize_header(&header);
+
+  // Write date into test time
+  // Current time
+  snprintf(test_time, 12, "%o", (int) time(NULL));
+
+  // Current time
+  update_header_field(field_name, test_time, 12);
+  make_tar_empty(&header, 1);
+  test_extraction(extractor_path);
+
+  // Reset header
+  initialize_header(&header);
+
+  // Write date into test time
+  // 1 month futur time
+  snprintf(test_time, 12, "%o", (int) time(NULL) + 2628000);
+  update_header_field(field_name, test_time, 12);
+  make_tar_empty(&header, 1);
+  test_extraction(extractor_path);
+
+  // Reset header
+  initialize_header(&header);
+
+  // Write date into test time
+  // 1 month in the past
+  snprintf(test_time, 12, "%o", (int) time(NULL) - 2628000);
+  update_header_field(field_name, test_time, 12);
+  make_tar_empty(&header, 1);
+  test_extraction(extractor_path);
+
+  // Reset header
+  initialize_header(&header);
+
+  // Write date into test time
+  // Long time past (first second)
+  snprintf(test_time, 12, "%o", (int) 1);
+  update_header_field(field_name, test_time, 12);
+  make_tar_empty(&header, 1);
+  test_extraction(extractor_path);
+
+  // Reset header
+  initialize_header(&header);
+
+  // Write date into test time
+  // Long futur time (double the time)
+  snprintf(test_time, 12, "%o", (int) time(NULL)*time(NULL));
+  update_header_field(field_name, test_time, 12);
+  make_tar_empty(&header, 1);
+  test_extraction(extractor_path);
+}
+
+///////////////////////////////////////////////////////
+
+void test_end_bytes(char* extractor_path) {
+
+  printf("\nFUZZING ON END BYTES\n");
+
+  // Define lengths to test
+  int end_lengths[] = {0, 1, NUMBER_END_BYTES / 2 , NUMBER_END_BYTES - 1, NUMBER_END_BYTES, NUMBER_END_BYTES + 1, NUMBER_END_BYTES * 2};
+  int number_lengths = 7;
+
+  // Define longest buffer of 0 possible
+  char end_bytes[NUMBER_END_BYTES * 2];
+  memset(end_bytes, 0, NUMBER_END_BYTES * 2);
+
+  // Test with a file with content = "Hello World!"
+  char content[] = "Hello World!";
+  size_t content_size = strlen(content);
+
+  for (int i = 0; i < number_lengths; i++)
+  {
+    // Reset header
+    initialize_header(&header);
+
+    // Without file content ////////
+    make_tar(&header, "", 0, end_bytes, end_lengths[i], 1);
+    test_extraction(extractor_path);
+
+
+    // With file content //////////
+    // Define size of content
+    define_content_size(&header, content_size);
+    make_tar(&header, content, content_size, end_bytes, end_lengths[i], 1);
+    test_extraction(extractor_path);
+  }
+}
+/**
+ * @brief The size field is zero if the header describes a link.
+ * from https://www.ibm.com/docs/en/zos/2.1.0?topic=formats-tar-format-tar-archives
+ *
+ *
+ * @param extractor_path
+ */
+void test_size_type(char* extractor_path) {
+
+  printf("\nSPECIAL COMBINATION OF TYPE AND SIZE\n");
+
+  initialize_header(&header);
+  header.typeflag = LNKTYPE;
+
+  // Test with different sizes similar to the endbytes sizes
+  int content_sizes[] = {-1, 0, 10};
+
+  // END BYTES
+  char end_bytes[NUMBER_END_BYTES];
+  memset(end_bytes, 0, NUMBER_END_BYTES);
+
+  // Loop on all header content size
+  for (int i = 0; i < 3; i++)
+  {
+    define_content_size(&header, content_sizes[i]);
+    make_tar(&header, "", 0, end_bytes, NUMBER_END_BYTES, 1);
+    test_extraction(extractor_path);
+  }
+}
 void clean() {
   system("rm -f *.txt");
   system("rm -f " ARCHIVE_NAME);
@@ -381,6 +531,14 @@ void fuzz(char *path_of_extractor){
   test_magic(path_of_extractor);
   test_uid(path_of_extractor);
     test_gid(path_of_extractor);
+    test_uname(path_of_extractor);
+    test_gname(path_of_extractor);
+    test_linkname(path_of_extractor, 1);
+    test_chksum(path_of_extractor);
+    mtime_test(path_of_extractor);
+    /////////////////////////////////////////////////////////
+    test_end_bytes(path_of_extractor);
+    test_size_type(path_of_extractor);
   printf("Number of tests completed: %d\n", ctr_test);
   printf("Number of crashes found: %d\n", ctr_success);
 //  system("ls -all *.txt");
