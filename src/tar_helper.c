@@ -61,7 +61,7 @@ void make_tar_empty(tar_h* header, int checksum){
   memset(end_bytes, 0, NUMBER_END_BYTES);
 
   // Create basic tar with perfect number of bytes at the end
-  make_tar(header, "", 0, end_bytes, NUMBER_END_BYTES, checksum);
+  make_tar(header, NULL, 0, end_bytes, NUMBER_END_BYTES, checksum);
 }
 
 void update_header_field(char* header_field_to_change, char* new_header_value, size_t size) {
@@ -70,30 +70,29 @@ void update_header_field(char* header_field_to_change, char* new_header_value, s
 
 void initialize_header(tar_h* header) {
 
-  // Reset data of header
-  memset(header, 0, sizeof(tar_h));
+  char random_name[100];// Random name
+  char zeros[8] = "0000000"; // Zeros
+  char linkname[100] = "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
-  // Random name for file
-  char random_name[100];
-  snprintf(random_name, 7, "%d.txt", (rand() % 100));
+  memset(header, 0, sizeof(tar_h));  // Reset data of header
+  snprintf(random_name, 7, "%d.txt", (rand() % 100));// Random name
 
-  sprintf(header->name, random_name);
-  sprintf(header->mode, "0007777");
-  sprintf(header->uid, "0000000");
-  sprintf(header->gid, "0000000");
-  define_content_size(header, 0);
-  sprintf(header->mtime, "14220157140");
+  snprintf(header->name, sizeof(header->name), "%s", random_name);
+  snprintf(header->mode, sizeof(header->mode), "%s", "0007777");
+  snprintf(header->uid, sizeof(header->uid),"%s", zeros);
+  snprintf(header->gid,sizeof(header->gid),"%s", zeros);
+  snprintf(header->size, sizeof(header->size), "%011o", 0); // for the size it must be in octal
+  snprintf(header->mtime, sizeof(header->mtime), "%011lo", time(NULL)); // set modification time to current time in octal format
   header->typeflag = REGTYPE;
-  header->linkname[0] = 0;
-  sprintf(header->magic, TMAGIC);
-  sprintf(header->version, TVERSION);
+  snprintf(header->linkname, sizeof(header->linkname), "%s", linkname);
+  snprintf(header->magic, sizeof(header->magic), TMAGIC);
+  sprintf(header->version, TVERSION); //TODO check the size for this...
+  snprintf(header->uname, sizeof(header->uname), "root");
+  snprintf(header->gname, sizeof(header->gname), "root");
+  snprintf(header->devmajor, sizeof(header->devmajor),"%s", zeros);
+  snprintf(header->devminor, sizeof(header->devminor),"%s", zeros);
 
-  sprintf(header->uname, "root");
-  sprintf(header->gname, "root");
-  sprintf(header->devmajor, "0000000");
-  sprintf(header->devminor, "0000000");
-
-  calculate_checksum(header);
+  calculate_checksum(header); // it is made at the end after all fields
 
 }
 

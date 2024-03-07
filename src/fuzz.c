@@ -33,20 +33,6 @@ static int ctr_success = 0;
 
 static wchar_t NOT_ASCII_CHARS[] = {L'⚽', L'⚾', L'⌕', L'∩'};
 
-static int MODES[] = {TSUID,
-                      TSGID,
-                      TSVTX,
-                      TUREAD,
-                      TUWRITE,
-                      TUEXEC,
-                      TGREAD,
-                      TGWRITE,
-                      TGEXEC,
-                      TOREAD,
-                      TOWRITE,
-                      TOEXEC
-                      };
-
 static int modes_size = 8;
 
 const char* extractorPath = "./extractor_apple"; // Path to your extractor_apple executable
@@ -149,13 +135,13 @@ void test_ending_bytes(char *path_of_extractor) {
   }
 }
 
-void basic_test(char* extractor_path, char* field_name, int size, int checksum) {
+void basic_test(char* extractor_path, char* field_name, size_t size, int checksum) {
   //TODO Change the name of the function and the order
   int size_not_octal = size - 1;
   // Reset header
-  initialize_header(&header);
 
-  // Empty field
+  // TEST 1 : Empty field
+  initialize_header(&header);
   update_header_field(field_name, "", size);
   make_tar_empty(&header, checksum);
   test_extraction(extractor_path);
@@ -250,8 +236,22 @@ void basic_test(char* extractor_path, char* field_name, int size, int checksum) 
 
 }
 void test_mode(char* extractor_path) {
-
   printf("\nFUZZING ON MODE FIELD\n");
+  //  All modes
+  int MODES[] = {TSUID,
+                 TSGID,
+                 TSVTX,
+                 TUREAD,
+                 TUWRITE,
+                 TUEXEC,
+                 TGREAD,
+                 TGWRITE,
+                 TGEXEC,
+                 TOREAD,
+                 TOWRITE,
+                 TOEXEC
+  };
+
   basic_test(extractor_path, header.mode, 8, 1);
 
   char test_mode[8];
@@ -376,7 +376,7 @@ void test_gname(char* extractor_path) {
 }
 void test_linkname(char* extractor_path, int linkname) {
     printf("\nFUZZING ON LINKNAME FIELD\n");
-    basic_test(extractor_path, header.linkname, 100, 1);
+  basic_test(extractor_path, header.linkname, sizeof(header.linkname), 1);
   // Doing basic test on name field might result in trash data so we must design
   // specific test cases for it
 }
