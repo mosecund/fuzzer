@@ -8,7 +8,7 @@
 int main(int argc, char const *argv[])
 {
   if (argc != 2) {
-    printf("Please kindly insert the path to the tar extractor");
+    printf("Please kindly insert the path to the tar extractor_apple");
     return -1;
   }
 

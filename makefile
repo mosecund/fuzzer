@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -o3
 
 TARGET = fuzzer
-SRC = main.c fuzz.c tar_helper.c
+SRC = src/main.c src/fuzz.c src/tar_helper.c
 
 
 .PHONY: all clean
